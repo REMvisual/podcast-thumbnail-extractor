@@ -480,9 +480,13 @@
     </style>
 </head>
 <body>
-    <div class="container">
+    <div id="main-section" class="container">
         <h1>🎬 Thumbnail Asset Extractor</h1>
         <p class="subtitle">AI-powered frame extraction for podcast thumbnails</p>
+        <nav style="margin-bottom: 1.5rem; font-size: 0.9rem;">
+            <a href="#" style="color: #ff6b35; text-decoration: none; margin-right: 1rem;">Home</a>
+            <a href="#config" style="color: #a0a0b8; text-decoration: none;">⚙ Config</a>
+        </nav>
         
         <div id="status"></div>
         
@@ -663,7 +667,53 @@
             </div>
         </div>
     </div>
-    
+
+    <section id="config-section" class="container" style="display:none;">
+        <h1>⚙ Category Configuration</h1>
+        <p class="subtitle">Manage detection categories, toggle them on or off, add new ones, and train custom models.</p>
+        <nav style="margin-bottom: 1.5rem; font-size: 0.9rem;">
+            <a href="#" style="color: #a0a0b8; text-decoration: none; margin-right: 1rem;">← Back to Home</a>
+            <a href="#config" style="color: #ff6b35; text-decoration: none;">⚙ Config</a>
+        </nav>
+        <div class="card">
+            <h2>Categories</h2>
+            <div style="overflow-x: auto;">
+                <table id="category-table" style="width: 100%; border-collapse: collapse; margin-top: 1rem;">
+                    <thead>
+                        <tr style="text-align: left; border-bottom: 1px solid rgba(255,255,255,0.15);">
+                            <th style="padding: 0.75rem;">Enabled</th>
+                            <th style="padding: 0.75rem;">Label</th>
+                            <th style="padding: 0.75rem;">ID</th>
+                            <th style="padding: 0.75rem;">Icon</th>
+                            <th style="padding: 0.75rem;">Detector</th>
+                            <th style="padding: 0.75rem;">Model</th>
+                            <th style="padding: 0.75rem;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="category-tbody"></tbody>
+                </table>
+            </div>
+            <div id="config-status" style="margin-top: 1rem; color: #a0a0b8; font-size: 0.9rem;"></div>
+        </div>
+
+        <div class="card">
+            <h2>Add Category</h2>
+            <form id="add-category-form" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem;">
+                <input name="id" placeholder="ID (e.g. firetrucks)" required pattern="[a-z0-9-]+" style="padding: 0.75rem; border-radius: 8px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); color: inherit;">
+                <input name="label" placeholder="Label" required style="padding: 0.75rem; border-radius: 8px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); color: inherit;">
+                <input name="icon" placeholder="Emoji/Icon" maxlength="4" style="padding: 0.75rem; border-radius: 8px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); color: inherit;">
+                <select name="detector" required style="padding: 0.75rem; border-radius: 8px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); color: inherit;">
+                    <option value="quality">Quality (train CNN)</option>
+                    <option value="face">Face detection</option>
+                    <option value="none">No filter</option>
+                </select>
+                <input name="model_path" placeholder="models/your-model.pth (optional)" style="padding: 0.75rem; border-radius: 8px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); color: inherit;">
+                <input name="training_data_path" placeholder="training_data/your-category/ (optional)" style="padding: 0.75rem; border-radius: 8px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); color: inherit;">
+                <button type="submit" class="btn-primary" style="grid-column: 1 / -1; padding: 0.75rem 1.5rem;">Add Category</button>
+            </form>
+        </div>
+    </section>
+
     <script>
         let videoFile = null;
         window.currentMode = window.currentMode || 'everything';
@@ -713,6 +763,128 @@
         }
 
         document.addEventListener('DOMContentLoaded', loadCategories);
+
+        // ============= #config ROUTE =============
+
+        function setStatus(msg) {
+            const el = document.getElementById('config-status');
+            if (el) el.textContent = msg;
+        }
+
+        async function renderCategoryTable() {
+            const tbody = document.getElementById('category-tbody');
+            if (!tbody) return;
+            try {
+                const resp = await fetch('/api/categories');
+                const data = await resp.json();
+                tbody.innerHTML = '';
+                for (const cat of (data.categories || [])) {
+                    const tr = document.createElement('tr');
+                    tr.style.borderBottom = '1px solid rgba(255,255,255,0.08)';
+                    tr.innerHTML = `
+                        <td style="padding: 0.75rem;"><input type="checkbox" ${cat.enabled ? 'checked' : ''} data-id="${cat.id}" class="toggle-enabled"></td>
+                        <td style="padding: 0.75rem;">${cat.label ?? ''}</td>
+                        <td style="padding: 0.75rem;"><code>${cat.id}</code></td>
+                        <td style="padding: 0.75rem;">${cat.icon || ''}</td>
+                        <td style="padding: 0.75rem;">${cat.detector ?? ''}</td>
+                        <td style="padding: 0.75rem; color: #a0a0b8; font-family: monospace; font-size: 0.85rem;">${cat.model_path || '—'}</td>
+                        <td style="padding: 0.75rem;">
+                            ${cat.builtin ? '<em style="color:#a0a0b8;">builtin</em>' : `<button class="delete-cat" data-id="${cat.id}" style="padding: 0.4rem 0.8rem; background: #ef4444; color: white; border: none; border-radius: 6px; cursor: pointer; margin-right: 0.5rem;">Delete</button>`}
+                            ${cat.detector === 'quality' ? `<button class="train-cat" data-id="${cat.id}" style="padding: 0.4rem 0.8rem; background: #ff6b35; color: white; border: none; border-radius: 6px; cursor: pointer;">Train</button>` : ''}
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                }
+                tbody.querySelectorAll('.toggle-enabled').forEach(cb => {
+                    cb.addEventListener('change', async () => {
+                        try {
+                            await fetch(`/api/categories/${encodeURIComponent(cb.dataset.id)}`, {
+                                method: 'PUT',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ enabled: cb.checked })
+                            });
+                            setStatus(`Toggled ${cb.dataset.id} → ${cb.checked ? 'enabled' : 'disabled'}`);
+                            loadCategories(); // refresh main-view buttons
+                        } catch (err) {
+                            setStatus(`Error: ${err.message}`);
+                        }
+                    });
+                });
+                tbody.querySelectorAll('.delete-cat').forEach(btn => {
+                    btn.addEventListener('click', async () => {
+                        if (!confirm(`Delete category "${btn.dataset.id}"?`)) return;
+                        try {
+                            const r = await fetch(`/api/categories/${encodeURIComponent(btn.dataset.id)}`, { method: 'DELETE' });
+                            const result = await r.json();
+                            setStatus(result.ok ? `Deleted ${btn.dataset.id}` : `Error: ${result.error || 'delete failed'}`);
+                            renderCategoryTable();
+                            loadCategories();
+                        } catch (err) {
+                            setStatus(`Error: ${err.message}`);
+                        }
+                    });
+                });
+                tbody.querySelectorAll('.train-cat').forEach(btn => {
+                    btn.addEventListener('click', () => startTraining(btn.dataset.id));
+                });
+            } catch (err) {
+                setStatus(`Error loading categories: ${err.message}`);
+            }
+        }
+
+        function handleRoute() {
+            const hash = window.location.hash;
+            const configEl = document.getElementById('config-section');
+            const mainEl = document.getElementById('main-section');
+            if (hash === '#config') {
+                if (configEl) configEl.style.display = 'block';
+                if (mainEl) mainEl.style.display = 'none';
+                renderCategoryTable();
+            } else {
+                if (configEl) configEl.style.display = 'none';
+                if (mainEl) mainEl.style.display = 'block';
+            }
+        }
+
+        window.addEventListener('hashchange', handleRoute);
+        document.addEventListener('DOMContentLoaded', handleRoute);
+        document.addEventListener('DOMContentLoaded', () => {
+            const form = document.getElementById('add-category-form');
+            if (!form) return;
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const fd = new FormData(e.target);
+                const body = {
+                    id: fd.get('id'),
+                    label: fd.get('label'),
+                    icon: fd.get('icon') || '',
+                    detector: fd.get('detector'),
+                    model_path: fd.get('model_path') || null,
+                    training_data_path: fd.get('training_data_path') || null,
+                    enabled: true,
+                    builtin: false,
+                };
+                try {
+                    const r = await fetch('/api/categories', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(body)
+                    });
+                    const data = await r.json();
+                    setStatus(data.ok ? `Added ${body.id}` : `Error: ${data.error || 'add failed'}`);
+                    if (data.ok) e.target.reset();
+                    renderCategoryTable();
+                    loadCategories();
+                } catch (err) {
+                    setStatus(`Error: ${err.message}`);
+                }
+            });
+        });
+
+        function startTraining(catId) {
+            setStatus(`Training job stub for ${catId} — wired in Phase 2.6.`);
+            // Actual SSE wiring in Task 2.6
+        }
 
         const uploadZone = document.getElementById('upload-zone');
         const videoInput = document.getElementById('video-input');
