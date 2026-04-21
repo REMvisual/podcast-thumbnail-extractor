@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="banner.png" alt="PodLab Thumbnail Extractor — AI-powered thumbnail generator for podcast videos. Grid of sample extracted thumbnails alongside the PodLab suite wordmark." width="100%">
+  <img src="banner.svg" alt="Thumbnail Extractor — best-frame extraction from any video, local CV, zero cloud. Ten candidate frames ranked by quality score, with the top pick (0.94) highlighted in orange." width="100%">
 </p>
 
 <h1 align="center">PodLab | Thumbnail Extractor</h1>

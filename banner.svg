@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 480" width="1280" height="480" role="img" aria-label="Thumbnail Extractor — best-frame extraction from any video, local CV, zero cloud">
+  <defs>
+    <linearGradient id="heat" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#ff6b35"/>
+      <stop offset="100%" stop-color="#f7931e"/>
+    </linearGradient>
+    <linearGradient id="baseBg3" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0A0A0A"/>
+      <stop offset="100%" stop-color="#0D0D0D"/>
+    </linearGradient>
+  </defs>
+
+  <!-- base -->
+  <rect width="1280" height="480" fill="url(#baseBg3)"/>
+
+  <!-- micro-label top -->
+  <text x="64" y="72" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, monospace" font-size="12" fill="#ff6b35" fill-opacity="0.85" letter-spacing="0.24em">LOCAL CV / ZERO CLOUD</text>
+
+  <!-- Title -->
+  <text x="64" y="160" font-family="'Space Grotesk', system-ui, sans-serif" font-weight="700" font-size="72" fill="#FFFFFF" letter-spacing="-0.02em">THUMBNAIL EXTRACTOR</text>
+
+  <!-- Tagline -->
+  <text x="64" y="204" font-family="'Space Grotesk', system-ui, sans-serif" font-weight="400" font-size="22" fill="#888888" letter-spacing="0.005em">Best-frame extraction from any video. Faces, screens, and hero frames — quality-scored.</text>
+
+  <!-- Frame strip: 10 candidate thumbnails, varying opacity (quality score visualization) -->
+  <g>
+    <!-- Candidate 1 — rejected (low opacity) -->
+    <rect x="80"   y="300" width="96" height="56" fill="#1A1A1A" stroke="#444444" stroke-width="1"/>
+    <text x="128" y="334" font-family="'JetBrains Mono', ui-monospace, monospace" font-size="11" fill="#555555" text-anchor="middle">0.32</text>
+
+    <!-- Candidate 2 -->
+    <rect x="192" y="300" width="96" height="56" fill="#1A1A1A" stroke="#555555" stroke-width="1"/>
+    <text x="240" y="334" font-family="'JetBrains Mono', ui-monospace, monospace" font-size="11" fill="#666666" text-anchor="middle">0.48</text>
+
+    <!-- Candidate 3 -->
+    <rect x="304" y="300" width="96" height="56" fill="#1A1A1A" stroke="#666666" stroke-width="1"/>
+    <text x="352" y="334" font-family="'JetBrains Mono', ui-monospace, monospace" font-size="11" fill="#888888" text-anchor="middle">0.61</text>
+
+    <!-- Candidate 4 -->
+    <rect x="416" y="300" width="96" height="56" fill="#1A1A1A" stroke="#888888" stroke-width="1"/>
+    <text x="464" y="334" font-family="'JetBrains Mono', ui-monospace, monospace" font-size="11" fill="#aaaaaa" text-anchor="middle">0.74</text>
+
+    <!-- Candidate 5 — TOP PICK (bright gradient border) -->
+    <rect x="528" y="296" width="104" height="64" fill="#1a0f08" stroke="url(#heat)" stroke-width="2"/>
+    <rect x="532" y="300" width="96" height="56" fill="url(#heat)" fill-opacity="0.14"/>
+    <text x="580" y="334" font-family="'JetBrains Mono', ui-monospace, monospace" font-size="12" font-weight="700" fill="#ff6b35" text-anchor="middle">0.94</text>
+    <text x="580" y="282" font-family="'JetBrains Mono', ui-monospace, monospace" font-size="10" fill="#ff6b35" text-anchor="middle" letter-spacing="0.16em">TOP</text>
+
+    <!-- Candidate 6 -->
+    <rect x="648" y="300" width="96" height="56" fill="#1A1A1A" stroke="#888888" stroke-width="1"/>
+    <text x="696" y="334" font-family="'JetBrains Mono', ui-monospace, monospace" font-size="11" fill="#aaaaaa" text-anchor="middle">0.71</text>
+
+    <!-- Candidate 7 -->
+    <rect x="760" y="300" width="96" height="56" fill="#1A1A1A" stroke="#666666" stroke-width="1"/>
+    <text x="808" y="334" font-family="'JetBrains Mono', ui-monospace, monospace" font-size="11" fill="#888888" text-anchor="middle">0.58</text>
+
+    <!-- Candidate 8 -->
+    <rect x="872" y="300" width="96" height="56" fill="#1A1A1A" stroke="#555555" stroke-width="1"/>
+    <text x="920" y="334" font-family="'JetBrains Mono', ui-monospace, monospace" font-size="11" fill="#666666" text-anchor="middle">0.42</text>
+
+    <!-- Candidate 9 -->
+    <rect x="984" y="300" width="96" height="56" fill="#1A1A1A" stroke="#444444" stroke-width="1"/>
+    <text x="1032" y="334" font-family="'JetBrains Mono', ui-monospace, monospace" font-size="11" fill="#555555" text-anchor="middle">0.29</text>
+
+    <!-- Candidate 10 -->
+    <rect x="1096" y="300" width="96" height="56" fill="#1A1A1A" stroke="#333333" stroke-width="1"/>
+    <text x="1144" y="334" font-family="'JetBrains Mono', ui-monospace, monospace" font-size="11" fill="#444444" text-anchor="middle">0.18</text>
+  </g>
+
+  <!-- axis labels -->
+  <g font-family="'JetBrains Mono', ui-monospace, monospace" font-size="10" fill="#666666" letter-spacing="0.1em">
+    <text x="80" y="400">QUALITY SCORE ▸</text>
+    <text x="1192" y="400" text-anchor="end">TIMESTAMP ▸ 00:03:12 / 47:22</text>
+  </g>
+
+  <!-- corner marker -->
+  <text x="1216" y="450" font-family="'JetBrains Mono', ui-monospace, monospace" font-size="10" fill="#FFFFFF" fill-opacity="0.35" letter-spacing="0.15em" text-anchor="end">remrepo.com / thumbnail-extractor</text>
+</svg>
