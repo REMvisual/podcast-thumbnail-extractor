@@ -1,0 +1,1215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thumbnail Asset Extractor</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 100%);
+            color: #ffffff;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, #ff6b35, #f7931e);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .subtitle {
+            color: #a0a0b8;
+            margin-bottom: 3rem;
+            font-size: 1.1rem;
+        }
+        
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .card h2 {
+            margin-bottom: 1.5rem;
+            font-size: 1.5rem;
+        }
+        
+        .upload-zone {
+            border: 2px dashed rgba(255, 107, 53, 0.5);
+            border-radius: 12px;
+            padding: 3rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: rgba(255, 107, 53, 0.05);
+        }
+        
+        .upload-zone:hover {
+            border-color: #ff6b35;
+            background: rgba(255, 107, 53, 0.1);
+        }
+        
+        .upload-zone.dragover {
+            border-color: #f7931e;
+            background: rgba(247, 147, 30, 0.2);
+            transform: scale(1.02);
+        }
+        
+        .radio-group {
+            display: flex;
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+        
+        .radio-option {
+            flex: 1;
+        }
+        
+        .radio-option input[type="radio"] {
+            display: none;
+        }
+        
+        .radio-label {
+            display: block;
+            padding: 1.5rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+        }
+        
+        .radio-option input[type="radio"]:checked + .radio-label {
+            background: rgba(255, 107, 53, 0.2);
+            border-color: #ff6b35;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #ff6b35, #f7931e);
+            color: white;
+            border: none;
+            padding: 1.25rem 3rem;
+            font-size: 1.1rem;
+            font-weight: 700;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(255, 107, 53, 0.3);
+        }
+        
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .processing {
+            text-align: center;
+            padding: 3rem;
+        }
+        
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-top: 4px solid #ff6b35;
+            border-radius: 50%;
+            margin: 0 auto 1.5rem;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+        
+        .asset-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+        
+        .asset-card:hover {
+            border-color: #ff6b35;
+            transform: translateY(-4px);
+        }
+        
+        .asset-image {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            background: rgba(0, 0, 0, 0.3);
+        }
+        
+        .asset-info {
+            padding: 1rem;
+        }
+        
+        .asset-score {
+            display: inline-block;
+            background: linear-gradient(135deg, #ff6b35, #f7931e);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        
+        .download-btn {
+            width: 100%;
+            background: #ff6b35;
+            color: white;
+            border: none;
+            padding: 0.75rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 0.5rem;
+            border-radius: 6px;
+        }
+        
+        .download-btn:hover {
+            background: #f7931e;
+        }
+        
+        video {
+            max-width: 100%;
+            max-height: 400px;
+            border-radius: 12px;
+            margin-bottom: 1rem;
+        }
+        
+        .status-message {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+        
+        .status-success {
+            background: rgba(74, 222, 128, 0.1);
+            border: 1px solid rgba(74, 222, 128, 0.3);
+            color: #4ade80;
+        }
+        
+        .status-error {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #ef4444;
+        }
+        
+        /* Slider styling */
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 8px;
+            background: linear-gradient(90deg, #ff6b35, #f7931e);
+            border-radius: 4px;
+            outline: none;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            background: white;
+            border: 3px solid #ff6b35;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            transition: all 0.2s;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 12px rgba(255, 107, 53, 0.5);
+        }
+        
+        input[type="range"]::-moz-range-thumb {
+            width: 24px;
+            height: 24px;
+            background: white;
+            border: 3px solid #ff6b35;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            transition: all 0.2s;
+        }
+        
+        input[type="range"]::-moz-range-thumb:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 12px rgba(255, 107, 53, 0.5);
+        }
+
+        /* Queue styles */
+        .btn-outline {
+            background: transparent;
+            color: #ff6b35;
+            border: 2px solid #ff6b35;
+            padding: 1.25rem 2.5rem;
+            font-size: 1.1rem;
+            font-weight: 700;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn-outline:hover:not(:disabled) {
+            background: rgba(255, 107, 53, 0.1);
+            transform: translateY(-2px);
+        }
+        .btn-outline:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .btn-sm {
+            padding: 0.4rem 0.8rem;
+            font-size: 0.8rem;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .btn-sm:hover { opacity: 0.85; }
+
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin: 2rem 0;
+        }
+
+        .queue-panel {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            overflow: hidden;
+        }
+        .queue-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.25rem 1.5rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .queue-header h2 { margin: 0; font-size: 1.25rem; }
+        .queue-empty {
+            padding: 3rem;
+            text-align: center;
+            color: #a0a0b8;
+            font-size: 0.95rem;
+        }
+        .queue-item {
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            transition: all 0.3s;
+        }
+        .queue-item:last-child { border-bottom: none; }
+        .queue-item-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        .queue-item-status {
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            flex-shrink: 0;
+        }
+        .queue-item-name {
+            flex: 1;
+            font-weight: 600;
+            font-size: 0.95rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .queue-item-tags {
+            display: flex;
+            gap: 0.4rem;
+            flex-shrink: 0;
+        }
+        .tag {
+            display: inline-block;
+            padding: 0.2rem 0.55rem;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .tag-mode { background: rgba(99, 102, 241, 0.25); color: #818cf8; }
+        .tag-count { background: rgba(255, 107, 53, 0.25); color: #ff6b35; }
+        .tag-size { background: rgba(255, 255, 255, 0.1); color: #a0a0b8; }
+        .queue-item-actions {
+            display: flex;
+            gap: 0.4rem;
+            flex-shrink: 0;
+            margin-left: 0.5rem;
+        }
+
+        /* Status-specific styles */
+        .queue-item.processing {
+            border-left: 3px solid #ff6b35;
+            background: rgba(255, 107, 53, 0.04);
+            animation: pulse-border 2s ease-in-out infinite;
+        }
+        @keyframes pulse-border {
+            0%, 100% { box-shadow: inset 0 0 0 0 rgba(255,107,53,0); }
+            50% { box-shadow: inset 0 0 20px 0 rgba(255,107,53,0.06); }
+        }
+        .queue-item.completed { border-left: 3px solid #4ade80; background: rgba(74, 222, 128, 0.03); }
+        .queue-item.error { border-left: 3px solid #ef4444; background: rgba(239, 68, 68, 0.03); }
+        .queue-item.cancelled { border-left: 3px solid #6b7280; opacity: 0.6; }
+
+        .progress-bar-track {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            margin-top: 0.75rem;
+            overflow: hidden;
+        }
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff6b35, #f7931e);
+            border-radius: 3px;
+            transition: width 0.4s ease;
+        }
+        .progress-text {
+            font-size: 0.8rem;
+            color: #a0a0b8;
+            margin-top: 0.4rem;
+        }
+        .queue-item-detail {
+            font-size: 0.85rem;
+            color: #a0a0b8;
+            margin-top: 0.5rem;
+        }
+        .queue-item-detail.error-msg { color: #ef4444; }
+
+        .results-toggle {
+            margin-top: 0.75rem;
+        }
+        .results-toggle-btn {
+            background: rgba(74, 222, 128, 0.15);
+            color: #4ade80;
+            border: 1px solid rgba(74, 222, 128, 0.3);
+            padding: 0.4rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .results-toggle-btn:hover { background: rgba(74, 222, 128, 0.25); }
+        .inline-results {
+            margin-top: 1rem;
+            display: none;
+        }
+        .inline-results.open { display: block; }
+        .inline-results .results-grid {
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 1rem;
+        }
+        .inline-results .asset-image { height: 120px; }
+
+        .spin-slow {
+            animation: spin 2s linear infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎬 Thumbnail Asset Extractor</h1>
+        <p class="subtitle">AI-powered frame extraction for podcast thumbnails</p>
+        
+        <div id="status"></div>
+        
+        <!-- Custom Model Section -->
+        <div class="card">
+            <h2>🧠 Custom Models (Optional)</h2>
+            <div style="margin-bottom: 1.5rem; color: #a0a0b8;">
+                Train AI models on YOUR preferences! Upload specialized models for different content types.
+            </div>
+            
+            <!-- UI Model -->
+            <div style="margin-bottom: 1.5rem; padding: 1rem; background: rgba(255,255,255,0.05); border-radius: 8px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                    <strong>💻 UI Model</strong>
+                    <span id="ui-model-status-text" style="font-size: 0.9rem; color: #a0a0b8;">Not loaded</span>
+                </div>
+                <div style="display: flex; gap: 1rem;">
+                    <input type="file" id="ui-model-input" accept=".pth" style="display: none;">
+                    <button 
+                        onclick="document.getElementById('ui-model-input').click()" 
+                        class="btn-primary" 
+                        style="padding: 0.5rem 1rem; font-size: 0.85rem;"
+                    >
+                        📤 Upload UI Model
+                    </button>
+                    <button 
+                        id="remove-ui-model-btn"
+                        onclick="removeModel('ui')" 
+                        class="btn-primary" 
+                        style="padding: 0.5rem 1rem; font-size: 0.85rem; background: #ef4444; display: none;"
+                    >
+                        🗑️ Remove
+                    </button>
+                </div>
+                <div style="font-size: 0.8rem; color: #a0a0b8; margin-top: 0.5rem;">
+                    Train on: UI interfaces, node graphs, software screenshots
+                </div>
+            </div>
+            
+            <!-- Art Model -->
+            <div style="margin-bottom: 1.5rem; padding: 1rem; background: rgba(255,255,255,0.05); border-radius: 8px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                    <strong>🎨 Art Model</strong>
+                    <span id="art-model-status-text" style="font-size: 0.9rem; color: #a0a0b8;">Not loaded</span>
+                </div>
+                <div style="display: flex; gap: 1rem;">
+                    <input type="file" id="art-model-input" accept=".pth" style="display: none;">
+                    <button 
+                        onclick="document.getElementById('art-model-input').click()" 
+                        class="btn-primary" 
+                        style="padding: 0.5rem 1rem; font-size: 0.85rem;"
+                    >
+                        📤 Upload Art Model
+                    </button>
+                    <button 
+                        id="remove-art-model-btn"
+                        onclick="removeModel('art')" 
+                        class="btn-primary" 
+                        style="padding: 0.5rem 1rem; font-size: 0.85rem; background: #ef4444; display: none;"
+                    >
+                        🗑️ Remove
+                    </button>
+                </div>
+                <div style="font-size: 0.8rem; color: #a0a0b8; margin-top: 0.5rem;">
+                    Train on: Renders, outputs, fullscreen art, visuals
+                </div>
+            </div>
+            
+            <!-- Face Model (Optional) -->
+            <div style="margin-bottom: 1.5rem; padding: 1rem; background: rgba(255,255,255,0.05); border-radius: 8px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                    <strong>😊 Face Model</strong>
+                    <span id="face-model-status-text" style="font-size: 0.9rem; color: #a0a0b8;">Not loaded</span>
+                </div>
+                <div style="display: flex; gap: 1rem;">
+                    <input type="file" id="face-model-input" accept=".pth" style="display: none;">
+                    <button 
+                        onclick="document.getElementById('face-model-input').click()" 
+                        class="btn-primary" 
+                        style="padding: 0.5rem 1rem; font-size: 0.85rem;"
+                    >
+                        📤 Upload Face Model
+                    </button>
+                    <button 
+                        id="remove-face-model-btn"
+                        onclick="removeModel('face')" 
+                        class="btn-primary" 
+                        style="padding: 0.5rem 1rem; font-size: 0.85rem; background: #ef4444; display: none;"
+                    >
+                        🗑️ Remove
+                    </button>
+                </div>
+                <div style="font-size: 0.8rem; color: #a0a0b8; margin-top: 0.5rem;">
+                    Train on: Face shots, expressions you prefer
+                </div>
+            </div>
+            
+            <div style="margin-top: 1.5rem; padding: 1rem; background: rgba(255,107,53,0.1); border: 1px solid rgba(255,107,53,0.3); border-radius: 8px;">
+                <strong>📚 Training Guide</strong><br>
+                <div style="margin-top: 0.5rem; font-size: 0.9rem; color: #a0a0b8;">
+                    See <code>DUAL_MODEL_TRAINING_GUIDE.md</code> for step-by-step instructions.
+                    Learn how to train separate models for UI and Art content!
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>2. Upload Video</h2>
+            <div id="upload-zone" class="upload-zone">
+                <div style="font-size: 3rem; margin-bottom: 1rem;">📹</div>
+                <div style="font-size: 1.2rem; margin-bottom: 0.5rem;">Drop your video here</div>
+                <div style="color: #a0a0b8; font-size: 0.9rem;">or click to browse</div>
+                <input type="file" id="video-input" accept="video/*" style="display: none;">
+            </div>
+            <div id="video-preview"></div>
+        </div>
+        
+        <div class="card">
+            <h2>3. Choose Mode</h2>
+            <div class="radio-group">
+                <div class="radio-option">
+                    <input type="radio" id="faces" name="mode" value="faces" checked>
+                    <label for="faces" class="radio-label">
+                        <div style="font-size: 2rem; margin-bottom: 0.5rem;">😊</div>
+                        <div style="font-weight: 700;">Faces</div>
+                        <div style="font-size: 0.85rem; color: #a0a0b8; margin-top: 0.5rem;">Extract talking heads</div>
+                    </label>
+                </div>
+                <div class="radio-option">
+                    <input type="radio" id="screens_ui" name="mode" value="screens_ui">
+                    <label for="screens_ui" class="radio-label">
+                        <div style="font-size: 2rem; margin-bottom: 0.5rem;">💻</div>
+                        <div style="font-weight: 700;">Screens: UI</div>
+                        <div style="font-size: 0.85rem; color: #a0a0b8; margin-top: 0.5rem;">Interfaces, nodes, software</div>
+                    </label>
+                </div>
+                <div class="radio-option">
+                    <input type="radio" id="screens_art" name="mode" value="screens_art">
+                    <label for="screens_art" class="radio-label">
+                        <div style="font-size: 2rem; margin-bottom: 0.5rem;">🎨</div>
+                        <div style="font-weight: 700;">Screens: Art</div>
+                        <div style="font-size: 0.85rem; color: #a0a0b8; margin-top: 0.5rem;">Renders, outputs, visuals</div>
+                    </label>
+                </div>
+            </div>
+            
+            <div class="radio-group" style="margin-top: 1rem;">
+                <div class="radio-option">
+                    <input type="radio" id="screens_mixed" name="mode" value="screens_mixed">
+                    <label for="screens_mixed" class="radio-label">
+                        <div style="font-size: 2rem; margin-bottom: 0.5rem;">🖥️</div>
+                        <div style="font-weight: 700;">Screens: Mixed</div>
+                        <div style="font-size: 0.85rem; color: #a0a0b8; margin-top: 0.5rem;">50/50 UI + Art blend</div>
+                    </label>
+                </div>
+                <div class="radio-option">
+                    <input type="radio" id="both" name="mode" value="both">
+                    <label for="both" class="radio-label">
+                        <div style="font-size: 2rem; margin-bottom: 0.5rem;">🎯</div>
+                        <div style="font-weight: 700;">Everything</div>
+                        <div style="font-size: 0.85rem; color: #a0a0b8; margin-top: 0.5rem;">Faces + UI + Art</div>
+                    </label>
+                </div>
+                <div class="radio-option" style="opacity: 0; pointer-events: none;">
+                    <!-- Spacer for grid alignment -->
+                </div>
+            </div>
+            
+            <!-- Background Removal Option (Only for Faces) -->
+            <div id="bg-removal-option" style="margin-top: 1.5rem; padding: 1.5rem; background: rgba(255, 107, 53, 0.1); border: 1px solid rgba(255, 107, 53, 0.3); border-radius: 12px; display: none;">
+                <label style="display: flex; align-items: center; cursor: pointer;">
+                    <input type="checkbox" id="remove-bg" style="width: 20px; height: 20px; margin-right: 1rem; cursor: pointer;">
+                    <div>
+                        <div style="font-weight: 700; font-size: 1.1rem; margin-bottom: 0.25rem;">✨ Remove Background</div>
+                        <div style="font-size: 0.85rem; color: #a0a0b8;">
+                            Extract faces with transparent background (PNG format)
+                        </div>
+                    </div>
+                </label>
+            </div>
+            
+            <!-- Number of Assets Slider -->
+            <div style="margin-top: 1.5rem; padding: 1.5rem; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px;">
+                <label style="display: block; margin-bottom: 1rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                        <div style="font-weight: 700; font-size: 1.1rem;">📊 Number of Assets to Extract</div>
+                        <div id="asset-count-display" style="font-size: 1.5rem; font-weight: 700; color: #ff6b35;">10</div>
+                    </div>
+                    <input 
+                        type="range" 
+                        id="asset-count-slider" 
+                        min="5" 
+                        max="50" 
+                        value="10" 
+                        step="5"
+                        style="width: 100%; height: 8px; background: linear-gradient(90deg, #ff6b35, #f7931e); border-radius: 4px; cursor: pointer; -webkit-appearance: none; appearance: none;"
+                    >
+                    <div style="display: flex; justify-content: space-between; margin-top: 0.5rem; font-size: 0.85rem; color: #a0a0b8;">
+                        <span>5 (Fast)</span>
+                        <span>25 (Balanced)</span>
+                        <span>50 (Comprehensive)</span>
+                    </div>
+                </label>
+                <div style="font-size: 0.85rem; color: #a0a0b8; margin-top: 0.75rem;">
+                    More assets = more options but slower processing
+                </div>
+            </div>
+        </div>
+        
+        <div class="action-buttons">
+            <button id="add-queue-btn" class="btn-outline" disabled>+ Add to Queue</button>
+            <button id="extract-now-btn" class="btn-primary" disabled>Extract Now</button>
+        </div>
+
+        <div id="queue-panel" class="queue-panel">
+            <div class="queue-header">
+                <h2>Extraction Queue (<span id="queue-count">0</span>)</h2>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button id="start-all-btn" class="btn-sm" style="background: #ff6b35; color: white; display: none;">Start All</button>
+                    <button id="clear-done-btn" class="btn-sm" style="background: rgba(255,255,255,0.1); color: #a0a0b8; display: none;">Clear Done</button>
+                </div>
+            </div>
+            <div id="queue-items">
+                <div class="queue-empty">Configure a video above and add it to the queue</div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let videoFile = null;
+
+        const uploadZone = document.getElementById('upload-zone');
+        const videoInput = document.getElementById('video-input');
+        const videoPreview = document.getElementById('video-preview');
+        const addQueueBtn = document.getElementById('add-queue-btn');
+        const extractNowBtn = document.getElementById('extract-now-btn');
+        const statusDiv = document.getElementById('status');
+
+        // Upload handling
+        uploadZone.onclick = () => videoInput.click();
+
+        uploadZone.ondragover = (e) => {
+            e.preventDefault();
+            uploadZone.classList.add('dragover');
+        };
+
+        uploadZone.ondragleave = () => {
+            uploadZone.classList.remove('dragover');
+        };
+
+        uploadZone.ondrop = (e) => {
+            e.preventDefault();
+            uploadZone.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('video/')) {
+                handleVideoUpload(file);
+            }
+        };
+
+        videoInput.onchange = (e) => {
+            const file = e.target.files[0];
+            if (file) handleVideoUpload(file);
+        };
+
+        function handleVideoUpload(file) {
+            videoFile = file;
+            const url = URL.createObjectURL(file);
+
+            videoPreview.innerHTML = `
+                <video controls src="${url}"></video>
+                <div style="color: #a0a0b8; margin-top: 1rem;">
+                    ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)
+                </div>
+            `;
+
+            addQueueBtn.disabled = false;
+            extractNowBtn.disabled = false;
+            showStatus('Video uploaded successfully! Ready to add to queue.', 'success');
+        }
+
+        // Show/hide background removal option based on mode
+        const modeRadios = document.querySelectorAll('input[name="mode"]');
+        const bgRemovalOption = document.getElementById('bg-removal-option');
+
+        modeRadios.forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                if (e.target.value === 'faces' || e.target.value === 'both') {
+                    bgRemovalOption.style.display = 'block';
+                } else {
+                    bgRemovalOption.style.display = 'none';
+                }
+            });
+        });
+
+        // Asset count slider
+        const assetCountSlider = document.getElementById('asset-count-slider');
+        const assetCountDisplay = document.getElementById('asset-count-display');
+
+        assetCountSlider.addEventListener('input', (e) => {
+            assetCountDisplay.textContent = e.target.value;
+        });
+
+        function showStatus(message, type) {
+            statusDiv.innerHTML = `
+                <div class="status-message status-${type}">
+                    ${type === 'success' ? '&#10003;' : '&#9888;'} ${message}
+                </div>
+            `;
+            setTimeout(() => { statusDiv.innerHTML = ''; }, 5000);
+        }
+
+        // ============= QUEUE MANAGER =============
+        const QueueManager = {
+            jobs: [],
+            eventSource: null,
+            expandedResultId: null,
+
+            init() {
+                this.connect();
+                this.loadExisting();
+            },
+
+            connect() {
+                if (this.eventSource) this.eventSource.close();
+                this.eventSource = new EventSource('/api/sse/queue');
+                this.eventSource.onmessage = (e) => {
+                    try { this.handleEvent(JSON.parse(e.data)); }
+                    catch (err) { console.error('SSE parse error', err); }
+                };
+                this.eventSource.onerror = () => {
+                    this.eventSource.close();
+                    setTimeout(() => this.connect(), 3000);
+                };
+            },
+
+            async loadExisting() {
+                try {
+                    const resp = await fetch('/api/queue');
+                    const data = await resp.json();
+                    if (data.success) {
+                        this.jobs = data.jobs;
+                        this.render();
+                    }
+                } catch (err) {
+                    console.error('Failed to load queue', err);
+                }
+            },
+
+            handleEvent(data) {
+                if (data.type === 'heartbeat') return;
+
+                if (data.type === 'job_added') {
+                    const idx = this.jobs.findIndex(j => j.id === data.job.id);
+                    if (idx >= 0) this.jobs[idx] = data.job;
+                    else this.jobs.push(data.job);
+                }
+                else if (data.type === 'job_started' || data.type === 'job_completed' ||
+                         data.type === 'job_error' || data.type === 'job_cancelled' ||
+                         data.type === 'job_updated') {
+                    const idx = this.jobs.findIndex(j => j.id === data.job_id);
+                    if (idx >= 0 && data.job) this.jobs[idx] = data.job;
+                }
+                else if (data.type === 'job_progress') {
+                    const job = this.jobs.find(j => j.id === data.job_id);
+                    if (job) {
+                        job.progress = data.progress;
+                        job.progress_message = data.message;
+                        // Fast update: just update progress bar + text, no full re-render
+                        const bar = document.getElementById(`progress-fill-${data.job_id}`);
+                        const txt = document.getElementById(`progress-text-${data.job_id}`);
+                        if (bar) bar.style.width = data.progress + '%';
+                        if (txt) txt.textContent = data.message;
+                        this.updateCounts();
+                        return;
+                    }
+                }
+                else if (data.type === 'job_removed') {
+                    this.jobs = this.jobs.filter(j => j.id !== data.job_id);
+                }
+
+                this.render();
+            },
+
+            async addJob(andStart) {
+                if (!videoFile) { showStatus('Upload a video first', 'error'); return; }
+
+                const mode = document.querySelector('input[name="mode"]:checked').value;
+                const removeBg = document.getElementById('remove-bg')?.checked || false;
+                const assetCount = parseInt(assetCountSlider.value);
+
+                addQueueBtn.disabled = true;
+                extractNowBtn.disabled = true;
+
+                const formData = new FormData();
+                formData.append('video', videoFile);
+                formData.append('mode', mode);
+                formData.append('remove_bg', removeBg.toString());
+                formData.append('asset_count', assetCount.toString());
+
+                try {
+                    const resp = await fetch('/api/queue/add', { method: 'POST', body: formData });
+                    const data = await resp.json();
+
+                    if (data.success) {
+                        showStatus(`Added "${videoFile.name}" to queue`, 'success');
+                        this.resetForm();
+
+                        if (andStart) {
+                            await fetch('/api/queue/start', { method: 'POST' });
+                        }
+                    } else {
+                        showStatus('Error: ' + (data.error || 'Failed to add'), 'error');
+                        addQueueBtn.disabled = false;
+                        extractNowBtn.disabled = false;
+                    }
+                } catch (err) {
+                    showStatus('Error: ' + err.message, 'error');
+                    addQueueBtn.disabled = false;
+                    extractNowBtn.disabled = false;
+                }
+            },
+
+            resetForm() {
+                videoFile = null;
+                videoInput.value = '';
+                videoPreview.innerHTML = '';
+                addQueueBtn.disabled = true;
+                extractNowBtn.disabled = true;
+                // Keep mode & slider as-is for convenience
+            },
+
+            async startAll() {
+                try {
+                    await fetch('/api/queue/start', { method: 'POST' });
+                    showStatus('Processing started', 'success');
+                } catch (err) {
+                    showStatus('Error starting: ' + err.message, 'error');
+                }
+            },
+
+            async cancelJob(id) {
+                try {
+                    await fetch(`/api/queue/${id}/cancel`, { method: 'POST' });
+                } catch (err) {
+                    showStatus('Error: ' + err.message, 'error');
+                }
+            },
+
+            async removeJob(id) {
+                try {
+                    await fetch(`/api/queue/${id}/remove`, { method: 'POST' });
+                } catch (err) {
+                    showStatus('Error: ' + err.message, 'error');
+                }
+            },
+
+            async retryJob(id) {
+                try {
+                    const resp = await fetch(`/api/queue/${id}/retry`, { method: 'POST' });
+                    const data = await resp.json();
+                    if (!data.success) showStatus('Error: ' + (data.error || 'Retry failed'), 'error');
+                } catch (err) {
+                    showStatus('Error: ' + err.message, 'error');
+                }
+            },
+
+            clearDone() {
+                const done = this.jobs.filter(j => ['completed','cancelled','error'].includes(j.status));
+                done.forEach(j => this.removeJob(j.id));
+            },
+
+            toggleResults(jobId) {
+                if (this.expandedResultId === jobId) {
+                    this.expandedResultId = null;
+                } else {
+                    this.expandedResultId = jobId;
+                }
+                this.render();
+            },
+
+            async loadResults(jobId) {
+                try {
+                    const resp = await fetch(`/api/queue/${jobId}/results`);
+                    const data = await resp.json();
+                    if (data.success) {
+                        const job = this.jobs.find(j => j.id === jobId);
+                        if (job) job.result = data.result;
+                        this.render();
+                    }
+                } catch (err) {
+                    console.error('Failed to load results', err);
+                }
+            },
+
+            updateCounts() {
+                const total = this.jobs.length;
+                const queued = this.jobs.filter(j => j.status === 'queued').length;
+                const done = this.jobs.filter(j => ['completed','cancelled','error'].includes(j.status)).length;
+
+                document.getElementById('queue-count').textContent = total;
+                document.getElementById('start-all-btn').style.display = queued > 0 ? 'inline-block' : 'none';
+                document.getElementById('clear-done-btn').style.display = done > 0 ? 'inline-block' : 'none';
+            },
+
+            render() {
+                const container = document.getElementById('queue-items');
+                this.updateCounts();
+
+                if (this.jobs.length === 0) {
+                    container.innerHTML = '<div class="queue-empty">Configure a video above and add it to the queue</div>';
+                    return;
+                }
+
+                container.innerHTML = this.jobs.map(job => this.renderJob(job)).join('');
+            },
+
+            renderJob(job) {
+                const statusIcons = {
+                    queued: '<span style="color:#6b7280">&#9202;</span>',
+                    processing: '<span class="spin-slow" style="color:#ff6b35;display:inline-block">&#9673;</span>',
+                    completed: '<span style="color:#4ade80">&#10003;</span>',
+                    error: '<span style="color:#ef4444">&#10007;</span>',
+                    cancelled: '<span style="color:#6b7280">&#8212;</span>'
+                };
+
+                const modeLabels = {
+                    faces: 'Faces', screens_ui: 'UI', screens_art: 'Art',
+                    screens_mixed: 'Mixed', both: 'All'
+                };
+
+                let progressHtml = '';
+                if (job.status === 'processing') {
+                    progressHtml = `
+                        <div class="progress-bar-track">
+                            <div class="progress-bar-fill" id="progress-fill-${job.id}" style="width:${job.progress || 0}%"></div>
+                        </div>
+                        <div class="progress-text" id="progress-text-${job.id}">${job.progress_message || 'Starting...'}</div>
+                    `;
+                }
+
+                let detailHtml = '';
+                if (job.status === 'queued') {
+                    detailHtml = '<div class="queue-item-detail">Waiting...</div>';
+                } else if (job.status === 'error') {
+                    detailHtml = `<div class="queue-item-detail error-msg">${job.error_message || 'Unknown error'}</div>`;
+                } else if (job.status === 'completed') {
+                    const r = job.result;
+                    const summary = r ? `${r.asset_count} assets (Best: ${r.top_score?.toFixed(2) || '?'})` : (job.progress_message || 'Done');
+                    detailHtml = `<div class="queue-item-detail" style="color:#4ade80">${summary}</div>`;
+                } else if (job.status === 'cancelled') {
+                    detailHtml = '<div class="queue-item-detail">Cancelled</div>';
+                }
+
+                // Action buttons
+                let actions = '';
+                if (job.status === 'queued') {
+                    actions = `<button class="btn-sm" style="background:#ef4444;color:white" onclick="QueueManager.cancelJob('${job.id}')">Cancel</button>`;
+                } else if (job.status === 'processing') {
+                    actions = `<button class="btn-sm" style="background:#ef4444;color:white" onclick="QueueManager.cancelJob('${job.id}')">Cancel</button>`;
+                } else if (job.status === 'completed') {
+                    actions = `
+                        <a href="/api/download-all/${job.id}" download><button class="btn-sm" style="background:#4ade80;color:#000">ZIP</button></a>
+                        <button class="btn-sm" style="background:rgba(255,255,255,0.1);color:#a0a0b8" onclick="QueueManager.removeJob('${job.id}')">Remove</button>
+                    `;
+                } else if (job.status === 'error') {
+                    actions = `
+                        <button class="btn-sm" style="background:#ff6b35;color:white" onclick="QueueManager.retryJob('${job.id}')">Retry</button>
+                        <button class="btn-sm" style="background:rgba(255,255,255,0.1);color:#a0a0b8" onclick="QueueManager.removeJob('${job.id}')">Remove</button>
+                    `;
+                } else if (job.status === 'cancelled') {
+                    actions = `<button class="btn-sm" style="background:rgba(255,255,255,0.1);color:#a0a0b8" onclick="QueueManager.removeJob('${job.id}')">Remove</button>`;
+                }
+
+                // Results toggle for completed jobs
+                let resultsHtml = '';
+                if (job.status === 'completed') {
+                    const isOpen = this.expandedResultId === job.id;
+                    resultsHtml = `
+                        <div class="results-toggle">
+                            <button class="results-toggle-btn" onclick="QueueManager.toggleResults('${job.id}')">
+                                ${isOpen ? '&#9660; Hide Results' : '&#9654; View Results'}
+                            </button>
+                        </div>
+                    `;
+
+                    if (isOpen && job.result && job.result.assets) {
+                        resultsHtml += `
+                            <div class="inline-results open">
+                                <div class="results-grid">
+                                    ${job.result.assets.map(a => `
+                                        <div class="asset-card">
+                                            <img src="${a.preview}" alt="Asset" class="asset-image" loading="lazy">
+                                            <div class="asset-info">
+                                                <div class="asset-score">Score: ${a.score.toFixed(2)}</div>
+                                                <div style="font-size:0.75rem;color:#a0a0b8">
+                                                    ${a.timestamp} | ${a.type}
+                                                </div>
+                                                <a href="${a.download_url}" download>
+                                                    <button class="download-btn">Download</button>
+                                                </a>
+                                            </div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        `;
+                    } else if (isOpen && (!job.result || !job.result.assets)) {
+                        // Need to load results
+                        this.loadResults(job.id);
+                        resultsHtml += '<div class="inline-results open"><div class="queue-item-detail">Loading results...</div></div>';
+                    }
+                }
+
+                return `
+                    <div class="queue-item ${job.status}">
+                        <div class="queue-item-header">
+                            <div class="queue-item-status">${statusIcons[job.status] || '?'}</div>
+                            <div class="queue-item-name" title="${job.filename}">${job.filename}</div>
+                            <div class="queue-item-tags">
+                                <span class="tag tag-mode">${modeLabels[job.mode] || job.mode}</span>
+                                <span class="tag tag-count">${job.asset_count}</span>
+                                <span class="tag tag-size">${job.file_size_mb} MB</span>
+                            </div>
+                            <div class="queue-item-actions">${actions}</div>
+                        </div>
+                        ${progressHtml}
+                        ${detailHtml}
+                        ${resultsHtml}
+                    </div>
+                `;
+            }
+        };
+
+        // Wire up buttons
+        addQueueBtn.onclick = () => QueueManager.addJob(false);
+        extractNowBtn.onclick = () => QueueManager.addJob(true);
+        document.getElementById('start-all-btn').onclick = () => QueueManager.startAll();
+        document.getElementById('clear-done-btn').onclick = () => QueueManager.clearDone();
+
+        // Init queue manager
+        QueueManager.init();
+
+        // ============= CUSTOM MODEL FUNCTIONS =============
+
+        const uiModelInput = document.getElementById('ui-model-input');
+        const artModelInput = document.getElementById('art-model-input');
+        const faceModelInput = document.getElementById('face-model-input');
+
+        const uiModelStatus = document.getElementById('ui-model-status-text');
+        const artModelStatus = document.getElementById('art-model-status-text');
+        const faceModelStatus = document.getElementById('face-model-status-text');
+
+        const removeUiModelBtn = document.getElementById('remove-ui-model-btn');
+        const removeArtModelBtn = document.getElementById('remove-art-model-btn');
+        const removeFaceModelBtn = document.getElementById('remove-face-model-btn');
+
+        async function checkModelStatus() {
+            try {
+                const response = await fetch('/api/model-status');
+                const data = await response.json();
+
+                if (data.ui_model_loaded) {
+                    uiModelStatus.textContent = 'Loaded';
+                    uiModelStatus.style.color = '#4ade80';
+                    removeUiModelBtn.style.display = 'inline-block';
+                } else {
+                    uiModelStatus.textContent = 'Not loaded';
+                    uiModelStatus.style.color = '#a0a0b8';
+                    removeUiModelBtn.style.display = 'none';
+                }
+
+                if (data.art_model_loaded) {
+                    artModelStatus.textContent = 'Loaded';
+                    artModelStatus.style.color = '#4ade80';
+                    removeArtModelBtn.style.display = 'inline-block';
+                } else {
+                    artModelStatus.textContent = 'Not loaded';
+                    artModelStatus.style.color = '#a0a0b8';
+                    removeArtModelBtn.style.display = 'none';
+                }
+
+                if (data.face_model_loaded) {
+                    faceModelStatus.textContent = 'Loaded';
+                    faceModelStatus.style.color = '#4ade80';
+                    removeFaceModelBtn.style.display = 'inline-block';
+                } else {
+                    faceModelStatus.textContent = 'Not loaded';
+                    faceModelStatus.style.color = '#a0a0b8';
+                    removeFaceModelBtn.style.display = 'none';
+                }
+            } catch (error) {
+                console.error('Error checking model status:', error);
+            }
+        }
+
+        async function uploadModel(file, modelType) {
+            if (!file) return;
+
+            if (!file.name.endsWith('.pth')) {
+                showStatus('Error: Model must be a .pth file', 'error');
+                return;
+            }
+
+            showStatus(`Uploading ${modelType.toUpperCase()} model...`, 'success');
+
+            const formData = new FormData();
+            formData.append('model', file);
+            formData.append('model_type', modelType);
+
+            try {
+                const response = await fetch('/api/upload-model', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showStatus(`${modelType.toUpperCase()} model loaded!`, 'success');
+                    checkModelStatus();
+                } else {
+                    showStatus('Error: ' + (data.error || 'Failed to load model'), 'error');
+                }
+            } catch (error) {
+                showStatus('Error uploading model: ' + error.message, 'error');
+            }
+        }
+
+        uiModelInput.onchange = (e) => uploadModel(e.target.files[0], 'ui');
+        artModelInput.onchange = (e) => uploadModel(e.target.files[0], 'art');
+        faceModelInput.onchange = (e) => uploadModel(e.target.files[0], 'face');
+
+        async function removeModel(modelType) {
+            if (!confirm(`Remove ${modelType.toUpperCase()} model and use default scoring?`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/remove-model', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ model_type: modelType })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showStatus(`${modelType.toUpperCase()} model removed.`, 'success');
+                    checkModelStatus();
+                } else {
+                    showStatus('Error: ' + (data.error || 'Failed to remove model'), 'error');
+                }
+            } catch (error) {
+                showStatus('Error: ' + error.message, 'error');
+            }
+        }
+
+        checkModelStatus();
+    </script>
+</body>
+</html>
