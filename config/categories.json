@@ -12,7 +12,7 @@
       "builtin": true
     },
     {
-      "id": "screens-ui",
+      "id": "screens_ui",
       "label": "Screens: UI",
       "icon": "💻",
       "detector": "quality",
@@ -22,7 +22,7 @@
       "builtin": false
     },
     {
-      "id": "screens-art",
+      "id": "screens_art",
       "label": "Screens: Art",
       "icon": "🎨",
       "detector": "quality",
@@ -32,7 +32,17 @@
       "builtin": false
     },
     {
-      "id": "everything",
+      "id": "screens_mixed",
+      "label": "Screens: Mixed",
+      "icon": "🖥️",
+      "detector": "quality",
+      "model_path": null,
+      "training_data_path": null,
+      "enabled": true,
+      "builtin": false
+    },
+    {
+      "id": "both",
       "label": "Everything",
       "icon": "🎯",
       "detector": "none",
