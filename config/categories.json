@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "categories": [
+    {
+      "id": "faces",
+      "label": "Faces",
+      "icon": "😊",
+      "detector": "face",
+      "model_path": null,
+      "training_data_path": null,
+      "enabled": true,
+      "builtin": true
+    },
+    {
+      "id": "screens-ui",
+      "label": "Screens: UI",
+      "icon": "💻",
+      "detector": "quality",
+      "model_path": "models/ui_starter.pth",
+      "training_data_path": "training_data/ui/",
+      "enabled": true,
+      "builtin": false
+    },
+    {
+      "id": "screens-art",
+      "label": "Screens: Art",
+      "icon": "🎨",
+      "detector": "quality",
+      "model_path": "models/art_starter.pth",
+      "training_data_path": "training_data/art/",
+      "enabled": true,
+      "builtin": false
+    },
+    {
+      "id": "everything",
+      "label": "Everything",
+      "icon": "🎯",
+      "detector": "none",
+      "model_path": null,
+      "training_data_path": null,
+      "enabled": true,
+      "builtin": true
+    }
+  ]
+}

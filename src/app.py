@@ -835,10 +835,51 @@ def frame_to_base64(frame, remove_bg_preview=False):
 
 # ============= API ENDPOINTS =============
 
+from config_loader import (
+    CategoryError,
+    delete_category as _delete_category,
+    list_categories,
+    save_category,
+    update_category,
+)
+
+
 @app.route('/')
 def index():
     """Serve the main HTML page"""
     return send_from_directory(os.path.dirname(os.path.abspath(__file__)), 'index.html')
+
+
+@app.route('/api/categories', methods=['GET'])
+def api_list_categories():
+    return jsonify({"categories": list_categories()})
+
+
+@app.route('/api/categories', methods=['POST'])
+def api_create_category():
+    try:
+        save_category(None, request.get_json(force=True))
+    except CategoryError as e:
+        return jsonify({"error": str(e)}), 400
+    return jsonify({"ok": True}), 201
+
+
+@app.route('/api/categories/<cat_id>', methods=['PUT'])
+def api_update_category(cat_id):
+    try:
+        update_category(None, cat_id, request.get_json(force=True))
+    except CategoryError as e:
+        return jsonify({"error": str(e)}), 400
+    return jsonify({"ok": True})
+
+
+@app.route('/api/categories/<cat_id>', methods=['DELETE'])
+def api_delete_category(cat_id):
+    try:
+        _delete_category(None, cat_id)
+    except CategoryError as e:
+        return jsonify({"error": str(e)}), 400
+    return jsonify({"ok": True})
 
 
 @app.route('/api/process', methods=['POST'])
