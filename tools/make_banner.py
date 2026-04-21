@@ -160,7 +160,7 @@ def main() -> int:
     draw.text((32, 300), "AI-picked thumbnails", font=tagline_font, fill=TEXT)
     draw.text((32, 324), "from any video.", font=tagline_font, fill=TEXT)
 
-    draw.text((32, HEIGHT - 74), "github.com/remvisuals/", font=subtitle_font, fill=(180, 180, 190))
+    draw.text((32, HEIGHT - 74), "github.com/REMvisual/", font=subtitle_font, fill=(180, 180, 190))
     draw.text((32, HEIGHT - 50), "podcast-thumbnail-extractor", font=subtitle_font, fill=(180, 180, 190))
 
     banner.save(OUTPUT_PATH, "PNG", optimize=True)

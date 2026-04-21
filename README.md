@@ -27,7 +27,7 @@ Use it to pick YouTube thumbnails for podcast episodes, bulk-generate preview ca
 **Windows (one-click):**
 
 ```
-git clone https://github.com/remvisuals/podcast-thumbnail-extractor
+git clone https://github.com/REMvisual/podcast-thumbnail-extractor
 cd podcast-thumbnail-extractor
 install.bat
 run.bat
@@ -38,7 +38,7 @@ Then open <http://localhost:5000>.
 **Linux / macOS:**
 
 ```
-git clone https://github.com/remvisuals/podcast-thumbnail-extractor
+git clone https://github.com/REMvisual/podcast-thumbnail-extractor
 cd podcast-thumbnail-extractor
 ./install.sh
 source venv/bin/activate

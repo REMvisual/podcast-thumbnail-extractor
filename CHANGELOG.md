@@ -25,4 +25,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Starter models trained on CC0 / public-domain data only.
 - Strings-scanned model binaries for leak-free release.
 
-[0.1.0]: https://github.com/remvisuals/podcast-thumbnail-extractor/releases/tag/v0.1.0
+[0.1.0]: https://github.com/REMvisual/podcast-thumbnail-extractor/releases/tag/v0.1.0

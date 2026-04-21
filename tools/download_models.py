@@ -13,7 +13,7 @@ MODEL_DIR = Path(os.environ.get("THUMBNAIL_EXTRACTOR_MODEL_DIR", REPO_ROOT / "mo
 CHECKSUMS_PATH = REPO_ROOT / "models" / "checksums.json"
 RELEASE_BASE_URL = os.environ.get(
     "THUMBNAIL_EXTRACTOR_RELEASE_URL",
-    "https://github.com/remvisuals/podcast-thumbnail-extractor/releases/download/v0.1.0",
+    "https://github.com/REMvisual/podcast-thumbnail-extractor/releases/download/v0.1.0",
 )
 
 

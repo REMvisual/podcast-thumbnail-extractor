@@ -1,6 +1,6 @@
 # Sample Frame Licenses
 
-The 8 frames in `sample_frames/` are used only to build `banner.png`.
+The 8 frames in `sample_frames/` are used only to build `banner.png` for [`REMvisual/podcast-thumbnail-extractor`](https://github.com/REMvisual/podcast-thumbnail-extractor).
 
 All frames sourced from **Lorem Picsum** (<https://picsum.photos/>), which serves curated random photos under the
 [Unsplash License](https://unsplash.com/license) — free for commercial and non-commercial use, no attribution required.
