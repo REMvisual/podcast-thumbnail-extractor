@@ -842,6 +842,7 @@ from config_loader import (
     save_category,
     update_category,
 )
+from training import run_training_job, stream_training_events
 
 
 @app.route('/')
@@ -880,6 +881,44 @@ def api_delete_category(cat_id):
     except CategoryError as e:
         return jsonify({"error": str(e)}), 400
     return jsonify({"ok": True})
+
+
+@app.route('/api/categories/<cat_id>/train', methods=['POST'])
+def api_train_category(cat_id):
+    """Start a training job for a quality-detector category.
+
+    Returns a job_id that the client uses to open an SSE stream at
+    /api/training/<job_id>/events.
+    """
+    cats = list_categories()
+    cat = next((c for c in cats if c.get("id") == cat_id), None)
+    if cat is None:
+        return jsonify({"error": "category not found"}), 404
+    if cat.get("detector") != "quality":
+        return jsonify({"error": "only quality-detector categories can be trained"}), 400
+
+    training_data = cat.get("training_data_path")
+    if not training_data or not os.path.isdir(training_data):
+        return jsonify({"error": f"training_data_path not found: {training_data}"}), 400
+
+    model_path = cat.get("model_path") or os.path.join("models", f"{cat_id}.pth")
+
+    # Optional overrides via JSON body for power users.
+    body = request.get_json(silent=True) or {}
+    epochs = int(body.get("epochs", 20))
+
+    job_id = uuid.uuid4().hex
+    run_training_job(job_id, training_data, model_path, epochs=epochs)
+    return jsonify({"job_id": job_id, "model_path": model_path, "epochs": epochs}), 202
+
+
+@app.route('/api/training/<job_id>/events', methods=['GET'])
+def api_training_events(job_id):
+    """Stream training events for a given job_id as Server-Sent Events."""
+    def _sse():
+        for event in stream_training_events(job_id):
+            yield f"data: {json.dumps(event)}\n\n"
+    return Response(_sse(), mimetype='text/event-stream')
 
 
 @app.route('/api/process', methods=['POST'])

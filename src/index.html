@@ -881,9 +881,44 @@
             });
         });
 
-        function startTraining(catId) {
-            setStatus(`Training job stub for ${catId} — wired in Phase 2.6.`);
-            // Actual SSE wiring in Task 2.6
+        async function startTraining(catId) {
+            try {
+                const r = await fetch(`/api/categories/${encodeURIComponent(catId)}/train`, { method: 'POST' });
+                const data = await r.json();
+                if (!data.job_id) {
+                    setStatus(`Error: ${data.error || 'failed to start training'}`);
+                    return;
+                }
+                setStatus(`Training ${catId}…`);
+                const es = new EventSource(`/api/training/${encodeURIComponent(data.job_id)}/events`);
+                es.onmessage = (ev) => {
+                    let event;
+                    try { event = JSON.parse(ev.data); }
+                    catch (_) { return; }
+                    if (event.stage === 'heartbeat') return;
+                    let msg = `[${catId}] ${event.stage}`;
+                    if (event.epoch !== undefined && event.total_epochs !== undefined) {
+                        msg += ` — epoch ${event.epoch}/${event.total_epochs}`;
+                    } else if (event.epoch !== undefined) {
+                        msg += ` — epoch ${event.epoch}`;
+                    }
+                    setStatus(msg);
+                    if (event.stage === 'done') {
+                        setStatus(`[${catId}] done — saved to ${event.output || data.model_path}`);
+                        es.close();
+                        renderCategoryTable();
+                    } else if (event.stage === 'error') {
+                        setStatus(`Error training ${catId}: ${event.error}`);
+                        es.close();
+                    }
+                };
+                es.onerror = () => {
+                    setStatus('SSE connection lost');
+                    es.close();
+                };
+            } catch (err) {
+                setStatus(`Error: ${err.message}`);
+            }
         }
 
         const uploadZone = document.getElementById('upload-zone');

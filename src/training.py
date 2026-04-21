@@ -340,3 +340,111 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+
+# ============= SSE JOB WRAPPER =============
+#
+# These helpers let a Flask app kick off training in a background thread and
+# stream coarse-grained progress events back to the browser over SSE. For the
+# v0.1.0 release we only emit start/training/done/error events — per-epoch
+# granularity would require either a progress callback in `train_model()` or
+# redirecting stdout, both of which are larger refactors. If a richer stream is
+# needed later, add a `progress_cb` parameter to `train_model()`.
+
+import queue
+import threading
+from typing import Iterator, Optional
+
+
+_JOBS: dict = {}
+
+
+def run_training_job(
+    job_id: str,
+    training_data_path: str,
+    output_path: str,
+    epochs: int = 20,
+    batch_size: int = 8,
+    learning_rate: float = 0.001,
+) -> None:
+    """Run training in a background thread, streaming events to a queue.
+
+    Args:
+        job_id: Unique ID for this job (used to look up the event stream).
+        training_data_path: Folder containing good/ and bad/ subfolders.
+        output_path: Where the trained .pth model will be saved.
+        epochs: Number of training epochs.
+        batch_size: Training batch size.
+        learning_rate: Optimizer learning rate.
+    """
+    q: "queue.Queue[dict]" = queue.Queue()
+    _JOBS[job_id] = {"queue": q, "status": "running"}
+
+    def _run() -> None:
+        try:
+            q.put({
+                "stage": "starting",
+                "training_data": str(training_data_path),
+                "output": str(output_path),
+                "epochs": int(epochs),
+            })
+            # Ensure the output directory exists so torch.save can write.
+            out_parent = Path(output_path).parent
+            if str(out_parent) not in ("", "."):
+                out_parent.mkdir(parents=True, exist_ok=True)
+
+            q.put({"stage": "training", "epoch": 0, "total_epochs": int(epochs)})
+
+            # Invoke the existing training logic in-process. This is blocking
+            # and CPU/GPU-bound; the SSE client sees no per-epoch events until
+            # `train_model()` returns (see note above about per-epoch streaming).
+            train_model(
+                training_data_dir=str(training_data_path),
+                output_path=str(output_path),
+                epochs=int(epochs),
+                batch_size=int(batch_size),
+                learning_rate=float(learning_rate),
+            )
+
+            q.put({
+                "stage": "done",
+                "epoch": int(epochs),
+                "output": str(output_path),
+            })
+            _JOBS[job_id]["status"] = "done"
+        except Exception as exc:  # broad: we want to report any failure
+            q.put({"stage": "error", "error": str(exc)})
+            _JOBS[job_id]["status"] = "error"
+
+    threading.Thread(target=_run, daemon=True).start()
+
+
+def stream_training_events(job_id: str) -> Iterator[dict]:
+    """Yield events for a job until it reaches a terminal stage.
+
+    Yields a single `{"stage": "error", "error": "unknown job id"}` event if
+    the job was never registered.
+    """
+    if job_id not in _JOBS:
+        yield {"stage": "error", "error": "unknown job id"}
+        return
+    q = _JOBS[job_id]["queue"]
+    while True:
+        try:
+            event = q.get(timeout=60)
+        except queue.Empty:
+            if _JOBS[job_id]["status"] != "running":
+                break
+            # Heartbeat keeps the SSE stream alive while training is blocked
+            # in `train_model()` for long stretches.
+            yield {"stage": "heartbeat"}
+            continue
+        yield event
+        if event.get("stage") in ("done", "error"):
+            break
+
+
+def get_job_status(job_id: str) -> Optional[str]:
+    """Return the current status of a job, or None if unknown."""
+    job = _JOBS.get(job_id)
+    return job["status"] if job else None
