@@ -97,7 +97,38 @@
             background: rgba(255, 107, 53, 0.2);
             border-color: #ff6b35;
         }
-        
+
+        .mode-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+
+        .mode-btn {
+            display: block;
+            padding: 1.5rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            color: inherit;
+            font: inherit;
+            font-weight: 700;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .mode-btn:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .mode-btn.selected {
+            background: rgba(255, 107, 53, 0.2);
+            border-color: #ff6b35;
+        }
+
         .btn-primary {
             background: linear-gradient(135deg, #ff6b35, #f7931e);
             color: white;
@@ -571,54 +602,7 @@
         
         <div class="card">
             <h2>3. Choose Mode</h2>
-            <div class="radio-group">
-                <div class="radio-option">
-                    <input type="radio" id="faces" name="mode" value="faces" checked>
-                    <label for="faces" class="radio-label">
-                        <div style="font-size: 2rem; margin-bottom: 0.5rem;">😊</div>
-                        <div style="font-weight: 700;">Faces</div>
-                        <div style="font-size: 0.85rem; color: #a0a0b8; margin-top: 0.5rem;">Extract talking heads</div>
-                    </label>
-                </div>
-                <div class="radio-option">
-                    <input type="radio" id="screens_ui" name="mode" value="screens_ui">
-                    <label for="screens_ui" class="radio-label">
-                        <div style="font-size: 2rem; margin-bottom: 0.5rem;">💻</div>
-                        <div style="font-weight: 700;">Screens: UI</div>
-                        <div style="font-size: 0.85rem; color: #a0a0b8; margin-top: 0.5rem;">Interfaces, nodes, software</div>
-                    </label>
-                </div>
-                <div class="radio-option">
-                    <input type="radio" id="screens_art" name="mode" value="screens_art">
-                    <label for="screens_art" class="radio-label">
-                        <div style="font-size: 2rem; margin-bottom: 0.5rem;">🎨</div>
-                        <div style="font-weight: 700;">Screens: Art</div>
-                        <div style="font-size: 0.85rem; color: #a0a0b8; margin-top: 0.5rem;">Renders, outputs, visuals</div>
-                    </label>
-                </div>
-            </div>
-            
-            <div class="radio-group" style="margin-top: 1rem;">
-                <div class="radio-option">
-                    <input type="radio" id="screens_mixed" name="mode" value="screens_mixed">
-                    <label for="screens_mixed" class="radio-label">
-                        <div style="font-size: 2rem; margin-bottom: 0.5rem;">🖥️</div>
-                        <div style="font-weight: 700;">Screens: Mixed</div>
-                        <div style="font-size: 0.85rem; color: #a0a0b8; margin-top: 0.5rem;">50/50 UI + Art blend</div>
-                    </label>
-                </div>
-                <div class="radio-option">
-                    <input type="radio" id="both" name="mode" value="both">
-                    <label for="both" class="radio-label">
-                        <div style="font-size: 2rem; margin-bottom: 0.5rem;">🎯</div>
-                        <div style="font-weight: 700;">Everything</div>
-                        <div style="font-size: 0.85rem; color: #a0a0b8; margin-top: 0.5rem;">Faces + UI + Art</div>
-                    </label>
-                </div>
-                <div class="radio-option" style="opacity: 0; pointer-events: none;">
-                    <!-- Spacer for grid alignment -->
-                </div>
-            </div>
+            <div id="mode-buttons-container" class="mode-buttons"></div>
             
             <!-- Background Removal Option (Only for Faces) -->
             <div id="bg-removal-option" style="margin-top: 1.5rem; padding: 1.5rem; background: rgba(255, 107, 53, 0.1); border: 1px solid rgba(255, 107, 53, 0.3); border-radius: 12px; display: none;">
@@ -682,6 +666,53 @@
     
     <script>
         let videoFile = null;
+        window.currentMode = window.currentMode || 'everything';
+
+        async function loadCategories() {
+            try {
+                const resp = await fetch('/api/categories');
+                const data = await resp.json();
+                const container = document.getElementById('mode-buttons-container');
+                if (!container) return;
+                container.innerHTML = '';
+                const enabled = (data.categories || []).filter(c => c.enabled);
+                let firstId = null;
+                for (const cat of enabled) {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.dataset.mode = cat.id;
+                    btn.className = 'mode-btn';
+                    btn.innerText = `${cat.icon || ''} ${cat.label}`.trim();
+                    btn.addEventListener('click', () => selectMode(cat.id));
+                    container.appendChild(btn);
+                    if (firstId === null) firstId = cat.id;
+                }
+                // Preserve existing selection if still present; else select first.
+                const stillPresent = enabled.some(c => c.id === window.currentMode);
+                if (!stillPresent && firstId) {
+                    selectMode(firstId);
+                } else if (window.currentMode) {
+                    selectMode(window.currentMode);
+                }
+            } catch (err) {
+                console.error('Failed to load categories', err);
+            }
+        }
+
+        function selectMode(id) {
+            document.querySelectorAll('.mode-btn').forEach(b => {
+                b.classList.toggle('selected', b.dataset.mode === id);
+            });
+            window.currentMode = id;
+            // Show/hide background removal option based on selected mode.
+            const bg = document.getElementById('bg-removal-option');
+            if (bg) {
+                const showBg = id === 'faces' || id === 'both' || id === 'everything';
+                bg.style.display = showBg ? 'block' : 'none';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', loadCategories);
 
         const uploadZone = document.getElementById('upload-zone');
         const videoInput = document.getElementById('video-input');
@@ -732,19 +763,8 @@
             showStatus('Video uploaded successfully! Ready to add to queue.', 'success');
         }
 
-        // Show/hide background removal option based on mode
-        const modeRadios = document.querySelectorAll('input[name="mode"]');
+        // Background removal visibility is driven by selectMode() above.
         const bgRemovalOption = document.getElementById('bg-removal-option');
-
-        modeRadios.forEach(radio => {
-            radio.addEventListener('change', (e) => {
-                if (e.target.value === 'faces' || e.target.value === 'both') {
-                    bgRemovalOption.style.display = 'block';
-                } else {
-                    bgRemovalOption.style.display = 'none';
-                }
-            });
-        });
 
         // Asset count slider
         const assetCountSlider = document.getElementById('asset-count-slider');
@@ -838,7 +858,7 @@
             async addJob(andStart) {
                 if (!videoFile) { showStatus('Upload a video first', 'error'); return; }
 
-                const mode = document.querySelector('input[name="mode"]:checked').value;
+                const mode = window.currentMode || 'everything';
                 const removeBg = document.getElementById('remove-bg')?.checked || false;
                 const assetCount = parseInt(assetCountSlider.value);
 
